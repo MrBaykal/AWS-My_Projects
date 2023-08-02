@@ -4,7 +4,11 @@ app = Flask(__name__)
 
 @app.route('/')
 def head():
+<<<<<<< HEAD
     return 'Hello world, I am Emre Baykal'
+=======
+    return 'Hello world Emre'
+>>>>>>> 5d29ba92bcf3ac24ba393444c84f236ae4bb4144
 
 
 @app.route('/second')
