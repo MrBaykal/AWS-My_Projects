@@ -1,0 +1,46 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: |
+  This CloudFormation template launches an EC2 instance, with an SG allowing ports 22 and 80. A flask app will be deployed to this instance.
+Resources:
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable 22, 80.
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: rafe-lesson
+      ImageId: ami-08a52ddb321b32a8c
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      UserData: !Base64 |
+        #!/bin/bash
+        yum update -y
+        yum install python3 -y
+        FOLDER="https://raw.githubusercontent.com/bluehackrafestefano/Project-001-Roman-Numerals-Converter/main"
+        cd /home/ec2-user
+        python3 -m venv env
+        source env/bin/activate
+        wget ${FOLDER}/app.py
+        mkdir templates && cd templates
+        wget ${FOLDER}/templates/index.html
+        wget ${FOLDER}/templates/result.html
+        cd ..
+        pip install flask
+        python app.py
+Outputs:
+  WebSiteDNSLink:
+    Value: !Sub
+      - http://${PublicAddress}
+      - PublicAddress: !GetAtt EC2Instance.PublicDnsName
+    Description: Application link.

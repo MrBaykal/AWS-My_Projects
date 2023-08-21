@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  CloudFormation Template for Roman Numerals Converter Application.
+  This template creates Python Flask Web Application on Amazon Linux 2 AMI
+  (ami-0453898e98046c639) BU deneme aciklamasi
+
+Parameters:
+  KeyName:
+    Description: Enter the name of your Key Pair for SSH connections.
+    Type: AWS::EC2::KeyPair::KeyName 
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
+  MySecGrp1:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP for Flask Web Server and SSH port to secure connection to my EC2 # Required
+      SecurityGroupIngress: 
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+     
+  FlaskServer1:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyName
+      ImageId: !Ref LatestAmiId
+      InstanceType: t2.micro
+      SecurityGroupIds:
+        - !Ref MySecGrp1
+      UserData: !Base64 |
+        #! /bin/bash
+        yum update -y
+        yum install python3
+        pip3 install flask
+        cd /home/ec2-user
+        FOLDER="https://raw.githubusercontent.com/MrBaykal/Tekrar_Project/master/Project-001-Roman-Numerals-Converter/"
+        wget ${FOLDER}/app.py
+        mkdir templates && cd templates
+        wget ${FOLDER}/templates/index.html
+        wget ${FOLDER}/templates/result.html
+        cd ..
+        python3 app.py 
+             
+Outputs:
+  InstancePrivateIp:
+    Value: !Sub
+     - Private Ip of EC2 is ${EC2PrivateIp}
+     - EC2PrivateIp: !GetAtt FlaskServer1.PrivateIp
+
+  WebSiteURL:
+    Value: !Sub
+    - http://${PublicAddress}
+    - PublicAddress: !GetAtt FlaskServer1.PublicDnsName
